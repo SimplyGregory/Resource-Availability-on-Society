@@ -2,7 +2,7 @@
 
 An interactive, browser-based evolutionary simulation exploring how resource scarcity shapes whether aggression or cooperation comes to dominate a society - a hawk–dove genetic algorithm rendered as a 2.5D island.
 
-<img alt="Image" src="./Example.png" align="right" width="440" />
+<img alt="Image" src="https://github.com/user-attachments/assets/a416d321-5a4e-4417-968e-f6906f29e78c" align="right" width="440" />
 
 [![Language](https://img.shields.io/badge/Language-JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)](#)
 [![3D](https://img.shields.io/badge/3D-Three.js-000000?style=flat-square&logo=threedotjs&logoColor=white)](https://threejs.org/)
