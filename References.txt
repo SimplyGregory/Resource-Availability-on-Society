@@ -1,0 +1,59 @@
+Inspiration (videos)
+- https://www.youtube.com/watch?v=TZfh8hpJIxo
+- https://www.youtube.com/watch?v=YNMkADpvO4w
+- https://www.youtube.com/watch?v=RAKjII7xCdk
+- https://www.youtube.com/watch?v=XP2sFzp2Rig
+
+3D rendering: Three.js
+- https://threejs.org/
+
+Three.js documentation:
+- https://threejs.org/docs/
+
+Three.js manual (getting started / fundamentals):
+- https://threejs.org/manual/
+
+Exact build used in this project (Three.js r0.169.0, ES module):
+- https://unpkg.com/three@0.169.0/build/three.module.js
+
+OrbitControls (camera controls):
+- https://threejs.org/docs/#examples/en/controls/OrbitControls
+
+OrbitControls source used (from Three.js r0.169.0 examples/jsm):
+- https://unpkg.com/three@0.169.0/examples/jsm/controls/OrbitControls.js
+
+
+Loading ES modules in the browser
+- https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules
+
+Import maps <script type="importmap"> (MDN):
+- https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap
+
+Fonts
+- https://fonts.google.com/
+
+Google Fonts: getting started / using the API:
+- https://developers.google.com/fonts/docs/getting_started
+
+@font-face: defining and self-hosting a custom font in CSS (MDN):
+- https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face
+
+Web fonts guide: how to bundle/self-host fonts (MDN):
+- https://developer.mozilla.org/en-US/docs/Learn/CSS/Styling_text/Web_fonts
+
+unicode-range: how each .woff2 subset (latin, latin-ext, ...) is only loaded when needed (MDN):
+- https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/unicode-range
+
+Typefaces used (specimen pages; both SIL Open Font License, free to embed):
+- EB Garamond:    https://fonts.google.com/specimen/EB+Garamond
+- IBM Plex Sans:  https://fonts.google.com/specimen/IBM+Plex+Sans
+- IBM Plex Mono:  https://fonts.google.com/specimen/IBM+Plex+Mono
+
+2D graph rendering (the population/gene chart)
+- https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API
+
+CanvasRenderingContext2D (2D drawing methods, MDN):
+- https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D
+
+requestAnimationFrame: the animation loop (MDN):
+- https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame

@@ -1,0 +1,1787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resource Availability on Society</title>
+    <link rel="icon" href="favicon.png" type="image/x-icon">
+
+    <link rel="stylesheet" href="fonts/fonts.css">
+</head>
+    <style>
+        :root{
+            --void: rgb(27, 31, 35);
+            --voidLift: rgb(44, 51, 57);
+            --Frame: rgba(24, 28, 33, .76);
+            --Border: rgba(236, 231, 220, .09);
+            --Brass: rgb(217, 164, 65);
+            --DimmedBrass: rgb(125, 98, 41);
+            --Line: rgb(217, 164, 65);
+            --White: rgb(236, 231, 220);
+            --DimmedWhite: rgb(152, 160, 167);
+            --Cooperative: rgb(90, 147, 214);
+            --Aggressive: rgb(217, 90, 74);
+
+            --serifFont: "EB Garamond", Georgia, "Times New Roman", serif;
+            --sansFont: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+            --monoFont: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            height : 100%;
+            overflow: hidden;
+            background: var(--void);
+            color: var(--White);
+            font-family: var(--sansFont);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        #stage {
+            position: fixed;
+            inset: 0;
+        }
+        #stage::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+        }
+
+        #scene {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            display: block;
+        }
+
+        .surface {
+            background: var(--Frame);
+            border: 1px solid var(--Border);
+            border-radius: 4px;
+            box-shadow: 0 18px 44px rgba(0, 0, 0, 0.4);
+        }
+        @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+            .surface {
+                backdrop-filter: blur(14px) saturate(1.1);
+                -webkit-backdrop-filter: blur(14px) saturate(1.1);
+            }
+        }
+
+        #console {
+            position: fixed;
+            z-index: 3;
+            left: 22px;
+            top: 22px;
+            width: 330px;
+            max-height: calc(100vh - 350px);
+            overflow-y: auto; overscroll-behavior: contain;
+            padding: 20px 20px 16px;
+        }
+        #console::-webkit-scrollbar {
+            width: 6px;
+        }
+        #console::-webkit-scrollbar-thumb {
+            background: var(--DimmedBrass);
+            border-radius: 3px;
+        }
+
+        #console h1 {
+            font-family: var(--serifFont);
+            font-weight: 600;
+            font-size: 25px;
+            line-height: 1.08;
+            letter-spacing: -0.005em;
+            margin: 0 0 9px;
+        }
+        #console h1 em {
+            font-style: italic;
+            color: var(--Brass);
+            font-weight: 500;
+        }
+
+        .standfirst {
+            font-family: var(--serifFont);
+            font-size: 14.5px;
+            line-height: 1.45;
+            color: #b9c0c6;
+            margin: 0 0 18px;
+        }
+        
+        .standfirst .sw {
+            font-style: italic;
+        }
+
+        .band {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0 13px;
+            font-size: 9.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            font-weight: 600;
+            color: var(--Brass);
+        }
+        .band::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--Line);
+        }
+        .band:first-of-type {
+            margin-top: 4px;
+        }
+
+        .ctrl {
+            margin-bottom: 15px;
+        }
+        .ctrl:last-child {
+            margin-bottom: 6px;
+        }
+        .ctrl label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12.5px;
+            color: #c8ced4;
+            margin-bottom: 9px;
+            font-weight: 400;
+        }
+        .ctrl label .val {
+            margin-left: auto;
+            font-family: var(--monoFont);
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--Brass);
+            letter-spacing: -0.02em;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50px;
+            flex: none;
+        }
+        .dot.cooperative {
+            background: var(--Cooperative);
+        }
+        .dot.aggressive {
+            background: var(--Aggressive);
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 2px;
+            border-radius: 0;
+            background: #3a4148;
+            outline: none;
+            cursor: pointer;
+            display: block;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: var(--White);
+            border: 3px solid var(--Brass);
+            cursor: pointer;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+            transition: transform 0.12s ease;
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: var(--White);
+            border: 3px solid var(--Brass);
+            cursor: pointer;
+        }
+        input[type=range]:hover::-webkit-slider-thumb {
+            transform: scale(1.15);
+        }
+        input[type=range]:focus-visible::-webkit-slider-thumb {
+            box-shadow: 0 0 0 4px rgba(217, 164, 65, 0.28);
+        }
+
+        .row {
+            display: flex;
+            gap: 7px;
+        }
+
+        button {
+            flex: 1;
+            cursor: pointer;
+            font-family: var(--sansFont);
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--White);
+            background: rgba(236, 231, 220, 0.05);
+            border: 1px solid var(--Border);
+            border-radius: 3px;
+            padding: 9px 10px;
+            transition: background 0.13s, border-color 0.13s, color 0.13s;
+        }
+        button:hover {
+            background: rgba(236, 231, 220, 0.11);
+            border-color: rgba(236, 231, 220, 0.2);
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+        button:focus-visible {
+            outline: 2px solid var(--Brass);
+            outline-offset: 2px;
+        }
+        button.primary {
+            background: var(--Brass);
+            border-color: var(--Brass);
+            color: #22190a;
+            font-weight: 600;
+        }
+        button.primary:hover {
+            background: #e6b254;
+            border-color: #e6b254;
+        }
+
+        details {
+            margin-top: 18px;
+            border-top: 1px solid var(--Line);
+            padding-top: 4px;
+        }
+
+        summary {
+            list-style: none;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 0 3px;
+            font-size: 9.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            font-weight: 600;
+            color: var(--DimmedWhite);
+            transition: color 0.13s;
+        }
+        summary::-webkit-details-marker {
+            display: none;
+        }
+        summary:hover {
+            color: var(--Brass);
+        }
+        summary:focus-visible {
+            outline: 2px solid var(--Brass);
+            outline-offset: 3px;
+        }
+        summary .chev {
+            margin-left: auto;
+            flex: none;
+            width: 11px;
+            height: 7px;
+            overflow: visible;
+            fill: none;
+            stroke: var(--DimmedBrass);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transform-origin: 50% 50%;
+            transition: transform 0.18s ease, stroke 0.13s;
+        }
+        summary:hover .chev {
+            stroke: var(--Brass);
+        }
+        
+        details[open] summary .chev {
+            transform: rotate(180deg);
+        }
+        details .inner {
+            padding-top: 12px;
+        }
+
+        .hint {
+            font-family: var(--sansFont);
+            font-style: italic;
+            font-size: 13px;
+            color: var(--DimmedWhite);
+            margin: -4px 0 14px;
+            line-height: 1.4;
+        }
+        
+        #readout {
+            position: fixed;
+            z-index: 3;
+            left: 22px;
+            bottom: 22px;
+            width: 330px;
+            padding: 18px 20px 16px;
+        }
+        .readout {
+            display: flex;
+            align-items: baseline;
+            gap: 9px;
+            margin-bottom: 11px;
+        }
+        .readout .k {
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--DimmedWhite);
+            line-height: 1;
+        }
+        .readout .v {
+            margin-left: auto;
+            font-family: var(--monoFont);
+            font-size: 22px;
+            font-weight: 500;
+            line-height: 1;
+            letter-spacing: -0.03em;
+            color: var(--Brass);
+        }
+        .readout.sub {
+            margin-top: -4px;
+            margin-bottom: 12px;
+        }
+        .readout.sub .v {
+            font-size: 14px;
+            color: var(--White);
+        }
+
+        #tally {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 12px;
+        }
+        .tally {
+            flex: 1;
+            text-align: center;
+        }
+        .tally .k {
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--DimmedWhite);
+            margin-bottom: 4px;
+            white-space: nowrap;
+        }
+        .tally .v {
+            font-family: var(--monoFont);
+            font-size: 19px;
+            font-weight: 500;
+            line-height: 1;
+            letter-spacing: -0.03em;
+        }
+        .tally .v.cooperative {
+            color: var(--Cooperative);
+        }
+        .tally .v.aggressive {
+            color: var(--Aggressive);
+        }
+
+        #chart {
+            display: block;
+            width: 100%;
+            height: 162px;
+            margin-top: 2px;
+        }
+
+        .isles {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin: 4px 0 2px;
+        }
+        .isles[hidden] {
+            display: none;
+        }
+        .isles .lbl {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--DimmedWhite);
+        }
+        .isles button {
+            flex: none;
+            padding: 0 3px;
+            border: 0;
+            background: none;
+            border-radius: 0;
+            font-family: var(--monoFont);
+            font-size: 11.5px;
+            color: var(--DimmedWhite);
+            border-bottom: 1px solid transparent;
+        }
+        .isles button:hover {
+            background: none;
+            color: var(--White);
+        }
+        .isles button[aria-pressed="true"]  {
+            color: var(--Brass);
+            border-bottom-color: var(--Brass);
+        }
+
+        #boot { 
+            position: fixed;
+            z-index: 4;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            font-family: var(--sansFont);
+            font-style: italic;
+            font-size: 16px;
+            color: var(--DimmedWhite);
+            background: var(--void);
+            transition: opacity 0.5s ease;
+        }
+        #boot.gone {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        @media (max-width: 900px) {
+            #console {
+                left: 12px;
+                right: 12px;
+                top: auto;
+                bottom: 12px;
+                width: auto;
+                max-height: 52vh;
+                padding: 16px 16px 12px;
+            }
+            #console h1 {
+                font-size: 21px;
+            }
+
+            #readout {
+                right: 12px;
+                left: 12px;
+                bottom: auto;
+                top: 12px;
+                width: auto;
+            }
+            
+            #chart {
+                height: 132px;
+            }
+
+            .standfirst {
+                font-size: 13.5px;
+                margin-bottom: 14px;
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                * {
+                    transition: 0.01ms !important;
+                }
+            }
+        }
+    </style>
+<div id="stage">
+    <canvas id="scene"></canvas>
+</div>
+
+<div id="console" class="surface">
+    <h1>Resource Availability<br />Simulation</h1>
+
+    <div class="row" style="margin-bottom: 7px">
+        <button id="playButton" class="primary">Play</button>
+        <button id="stepButton">Step a day</button>
+    </div>
+    <div class="row"><button id="resetButton">Reset</button></div>
+    <div class="ctrl" style="margin-top: 16px; margin-bottom: 2px">
+        <label for="islands">Islands Simulating: <span class="val" id="islandsVal"></span></label>
+        <input type="range" id="islands" min="1" max="4" step="1" />
+    </div>
+
+    <div class="band">Founding population</div>
+    <div class="ctrl">
+        <label for="populationStart">How many people <span class="val" id="popVal"></span></label>
+        <input type="range" id="populationStart" min="2" max="60" step="1" />
+    </div>
+    <div class="ctrl">
+        <label for="aggressionStart">Their starting aggression <span class="val" id="aggVal"></span></label>
+        <input type="range" id="aggressionStart" min="0" max="1" step="0.05" />
+    </div>
+
+    <div class="band">The island</div>
+    <div class="ctrl">
+        <label for="foodCount">Food each morning<span class="val" id="foodVal"></span></label>
+        <input type="range" id="foodCount" min="2" max="80" step="1" />
+    </div>
+    <div class="ctrl">
+        <label for="maxPopulation">Room on the island <span class="val" id="capVal"></span></label>
+        <input type="range" id="maxPopulation" min="8" max="80" step="1" />
+    </div>
+    <div class="ctrl">
+        <label for="speed">Simulation speed <span class="val" id="speedVal"></span></label>
+        <input type="range" id="speed" min="0.25" max="4" step="0.25" />
+    </div>
+
+    <details>
+        <summary>Rules of survival
+            <svg class="chev" viewBox="0 0 12 8" aria-hidden="true">
+                <path d="M1.5 2.2 L6 5.8 L10.5 2.2" />
+            </svg>
+        </summary>
+        <div class="inner">
+            <div class="ctrl">
+                <label for="mutation">Mutation step <span class="val" id="mutationVal"></span></label>
+                <input type="range" id="mutation" min="0" max="0.2" step="0.005" />
+            </div>
+            <div class="ctrl">
+                <label for="hungerCost">Hunger worsens injury <span class="val" id="hungerCostVal"></span></label>
+                <input type="range" id="hungerCost" min="0" max="3" step="0.1" />
+            </div>
+            <div class="ctrl">
+                <label for="injury">Injury severity <span class="val" id="injuryVal"></span></label>
+                <input type="range" id="injury" min="0" max="0.8" step="0.05" />
+            </div>
+            <div class="ctrl">
+                <label for="aggressiveBackfire">Aggressive actions backfire <span class="val" id="aggressiveBackfireVal"></span></label>
+                <input type="range" id="aggressiveBackfire" min="0" max="0.6" step="0.05" />
+            </div>
+            <div class="ctrl">
+                <label for="fightDestroy">Fighting destroys resources <span class="val" id="fightDestroyVal"></span></label>
+                <input type="range" id="fightDestroy" min="0" max="1" step="0.05" />
+            </div>
+            <div class="ctrl">
+                <label for="shareRisk">Sharing doesn't have enough <span class="val" id="shareRiskVal"></span></label>
+                <input type="range" id="shareRisk" min="0" max="0.9" step="0.05" />
+            </div>
+        </div>
+    </details>
+</div>
+
+<div id="readout" class="surface">
+    <div class="readout">
+        <div class="k">Mean aggression in gene pool</div>
+        <div class="v" id="meanAggressionVal">0.00</div>
+    </div>
+    <div class="readout sub">
+        <div class="k">Fruit per Person</div>
+        <div class="v" id="perPersonVal">0.00</div>
+    </div>
+    <div id="tally">
+        <div class="tally"><div class="k">Day</div><div class="v" id="dayVal">0</div></div>
+        <div class="tally"><div class="k">Shared</div><div class="v cooperative" id="SharedStat">0</div></div>
+        <div class="tally"><div class="k">Fought</div><div class="v aggressive" id="foughtStat">0</div></div>
+        <div class="tally"><div class="k">Born</div><div class="v" id="bornVal">0</div></div>
+        <div class="tally"><div class="k">Died</div><div class="v" id="diedVal">0</div></div>
+    </div>
+    <div class="isles" id="isles" hidden></div>
+    <canvas id="chart"></canvas>
+</div>
+
+<div id="boot">Loading...</div>
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "./libs/three.module.js",
+        "three/addons/": "./libs/addons/"
+    }
+}
+</script>
+<script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    "use strict";
+
+    const Config = {
+        populationStart: 24,
+        aggressionStart: 0.5,
+        foodCount: 24,
+        speed: 1.0,
+        islands: 1,
+        mutation: 0.06,
+        hungerCost: 1.0,
+        shareRisk: 0.25,
+        fightDestroy:0.4,
+        injury: 0.4,
+        aggressiveBackfire: 0.05,
+        Radius: 100,
+        maxPopulation: 30,
+    };
+
+    const instancePoolCap = 80;
+    const msPerDay = 3200;
+    const FruitCapacity = 2;
+    const SCENERY_N = 30;
+    const ROCK_N = 9;
+
+    const W = 1 / (Config.Radius * 1.25);
+
+    const Random = function() {
+        return Math.random();
+    }
+    const shuffleFunc = function(array) {
+        const a = array.slice();
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = (Math.random() * (i + 1)) | 0;
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    };
+    const randInt = function(number) {
+        return Math.random() * number | 0;
+    }
+    const clamp = function(value, a, b) {
+        return Math.min(Math.max(value, a), b);
+    }
+    const ease = function(time) {
+        if (time < 0.5) {
+            return 2 * time * time;
+        } else {
+            return 1 - Math.pow(-2 * time + 2, 2) / 2;
+        }
+    }
+    const lerp = function(a, b, time) {
+        return a + (b - a) * time;
+    }
+    const ElementID = function(id) {
+        return document.getElementById(id);
+    }
+
+    const islandTop = 0.085,
+          islandBottom = 0.40,
+          islandExponent = 0.60;
+    
+    const groundY = function(r) {
+        return islandTop * Math.sqrt(Math.max(0, 1 - Math.min(r, 1) ** (2 / islandExponent)));
+    }
+    const plantY = function(r, foot) {
+        return groundY(r + foot) - 0.0025;
+    }
+
+    function islandMesh(n = 44) {
+        const points = [];
+        for (let i = 0; i < n; i++) {
+            const u = -1 + (2 * i) / (n - 1);
+            const theta = Math.PI / 2 + (Math.PI / 2) * Math.sign(u) * Math.abs(u) ** 1.5;
+            const r = Math.max(0, Math.sin(theta)) ** islandExponent;
+            points.push(new THREE.Vector2(i === 0 || i === n - 1 ? 0 : r, theta <= Math.PI / 2 ? islandTop * Math.cos(theta) : islandBottom * Math.cos(theta)));
+        }
+        return points.reverse();
+    }
+
+    const flatMap = ["blue", "red", "bush", "rock", "fruit", "blueHome", "redHome"];
+
+    const bufferGeometry = {};
+    const material = {};
+
+    const sprites = {
+        blue: "assets/cooperator.png",
+        red: "assets/aggressor.png",
+        bush: "assets/bush.png",
+        rock: "assets/rock.png",
+        fruit: "assets/fruit.png",
+        blueHome: "assets/blueHome.png",
+        redHome: "assets/redHome.png",
+    };
+    const shadowPNG = "assets/shadow.png";
+
+    const cardHeight = {
+        blue: 0.0526,
+        red: 0.0526,
+        bush: 0.100,
+        rock: 0.056,
+        fruit: 0.026,
+        blueHome: 0.165,
+        redHome: 0.165,
+    };
+
+    const propFoot = {
+        bush: 0.046,
+        rock: 0.032,
+        fruit: 0.014,
+        blueHome: 0.072,
+        redHome: 0.072,
+    };
+
+    function cardGeometry() {
+        const Geometry = new THREE.PlaneGeometry(1, 1);
+        Geometry.translate(0, 0.5, 0);
+        return Geometry;
+    }
+
+    const textLoader = new THREE.TextureLoader();
+    async function loadTexture(url) {
+        const texture = await textLoader.loadAsync(url);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        return texture;
+    }
+
+    function makeIsland() {
+        const MSM = new THREE.MeshStandardMaterial({
+            color: new THREE.Color("#4a8a3c"), 
+            roughness: 0.92, 
+            metalness: 0, 
+            flatShading: true,
+            side: THREE.DoubleSide,
+        });
+        return { g: new THREE.LatheGeometry(islandMesh(), 76), MSM};
+    }
+
+    async function buildAssets() {
+        const island = makeIsland();
+        bufferGeometry.island = island.g;
+        material.island = island.MSM;
+        await loadSprites();
+    }
+
+    async function loadSprites() {
+        bufferGeometry.shadow = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+        material.shadow = new THREE.MeshBasicMaterial({
+            map: await loadTexture(shadowPNG),
+            transparent: true,
+            depthWrite: false,
+            color: 0x000000,
+            opacity: 0.85,
+        });
+        bufferGeometry.propShadow = bufferGeometry.shadow;
+        material.propShadow = material.shadow;
+
+        const card = cardGeometry();
+        await Promise.all(flatMap.map(async (key) => {
+            bufferGeometry[key] = card;
+            material[key] = new THREE.MeshBasicMaterial({
+                map: await loadTexture(sprites[key]),
+                transparent: true,
+                alphaTest: 0.45,
+                side: THREE.DoubleSide,
+                toneMapped: false,
+            });
+        }));
+    }
+    
+    const Simulation = {
+        blue: { x: -Config.Radius * 0.82, z: 0 },
+        red: { x: Config.Radius * 0.82, z: 0 },
+    };
+
+    const maxIslands = 4;
+    const islandGap = 2.55;
+    let worlds = [],
+        selected = 0;
+    
+    function makeWorld(index) {
+        return { index, origin: {x: 0, z: 0 },
+            scenery: [],
+            rocks: [],
+            bushes: [],
+            agents: [],
+            day: 0,
+            lastbirths: 0,
+            lastdeaths: 0,
+            history: [],
+            idSequence: 0,
+            plan: null
+        };
+    }
+
+    function layoutWorlds(num) {
+        const columns = Math.min(num, 2),
+              rows = Math.ceil(num / columns);
+        worlds = [];
+        for (let i = 0; i < num; i++) {
+            const world = makeWorld(i);
+            const row = Math.floor(i / columns),
+                inRow = Math.min(columns, num - row * columns);
+            world.origin.x = ((i % columns) - (inRow - 1) / 2) * islandGap;
+            world.origin.z = (row - (rows - 1) / 2) * islandGap;
+            worlds.push(world);
+        }
+        selected = Math.min(selected, num - 1);
+        return worlds;
+    }
+
+    function discPoint() {
+        let x, z, ok = false, tries = 0;
+        while (!ok && tries++ < 40) {
+            const a = Random() * Math.PI * 2,
+                r = Math.sqrt(Random()) * Config.Radius * 0.78;
+            x = Math.cos(a) * r;
+            z = Math.sin(a) * r;
+            ok = Math.hypot(x - Simulation.blue.x, z) > 22 && Math.hypot(x - Simulation.red.x, z) > 22;
+        }
+        return { x, z };
+    }
+
+    function makeScenery(world) {
+        world.scenery = [];
+        world.rocks = [];
+        for (let i = 0; i < SCENERY_N; i++) world.scenery.push({ ...discPoint(), rot: Random() * 6.28, s: 0.78 + Random() * 0.32 });
+        for (let i = 0; i < ROCK_N; i++) world.rocks.push({ ...discPoint(), rot: Random() * 6.28, s: 0.7 + Random() * 0.7 });
+    }
+
+    const foodSpread = 0.25;
+    function dailyFoodCount() {
+        const spread = Math.max(2, Config.foodCount * foodSpread);
+        return clamp(Math.round(Config.foodCount + (Random() * 2 - 1) * spread), 1, 80);
+    }
+    function placeFood(world, num) {
+        world.bushes = [];
+
+        const order = shuffleFunc(world.scenery.map((_, i) => i));
+        for (let i = 0; i < num; i++) {
+            const idx = order[i % order.length];
+            const point = world.scenery[idx];
+            const angle = Random() * Math.PI * 2;
+            const rad = 2 + Random() * 2.5;
+
+            world.bushes.push({
+                idx, x: point.x + Math.cos(angle) * rad,
+                z: point.z + Math.sin(angle) * rad,
+                foraged: false,
+                oy: 0.030 + Random() * 0.026,
+            });
+                
+        }
+    }
+
+    function homeSpawn(isHawk) {
+        const home = isHawk ? Simulation.red : Simulation.blue;
+        return { x:home.x + (Random() - 0.5) * 13,
+            z:home.z + (Random() - 0.5) * 16,
+        }
+    }
+
+    function gaussMutation() {
+        let u = 0, v = 0;
+        while (!u) u = Random();
+        while (!v) v = Random();
+        return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+
+    function makeAgent(world, parentH) {
+        const home = parentH === undefined ? clamp(Config.aggressionStart + gaussMutation() * 0.10, 0, 1) : clamp(parentH + gaussMutation() * Config.mutation, 0, 1);
+        return { id: world.idSequence++, home, isHawk: home >= 0.5, food: 0, fights: 0, killed: false, pos: homeSpawn(home >= 0.5), visitPos: null, bumpedFrom: null, dying: false, phase: Random() * Math.PI * 2, wob: 0.8 + Random() * 0.5, heading: 0 };
+    }
+
+    const hawksIn = (world) => world.agents.reduce((time, amount) => time + (amount.isHawk ? 1 : 0), 0);
+    const dovesIn = (world) => world.agents.length - hawksIn(world);
+    const geneIn = (world) => world.agents.length ? world.agents.reduce((time, ag) => time + ag.home, 0) / world.agents.length : 0;
+    
+    function snapshot(world) {
+        return { day: world.day, doves: dovesIn(world), hawks: hawksIn(world), gene: geneIn(world) };
+    }
+
+    function initSim(world) {
+        world.day = 0;
+        world.lastbirths = 0;
+        world.lastdeaths = 0;
+        world.history = [];
+        world.idSequence = 1;
+
+        makeScenery(world);
+        world.agents = [];
+        for (let i = 0; i < Config.populationStart; i++) world.agents.push(makeAgent(world));
+
+        world.plan = planDay(world);
+        world.history.push(snapshot(world));
+    }
+
+    function resolveBush(occupiedBush) {
+        if (occupiedBush.length === 1) { occupiedBush[0].food += 1; return;}
+        const doves = occupiedBush.filter(agent => !agent.isHawk);
+        const hawks = occupiedBush.filter(agent => agent.isHawk);
+        if (hawks.length === 0) {
+            const share = 1 / occupiedBush.length;
+            occupiedBush.forEach(agent => agent.food += share);
+            return;
+        }
+        if (doves.length === 0) {
+            if (Random() >= Config.fightDestroy) hawks[randInt(hawks.length)].food += 1;
+            hawks.forEach(a => a.fights++);
+            return;
+        }
+        if (hawks.length === 1) {
+            const hawk = hawks[0];
+            if (Random() < Config.aggressiveBackfire) {
+                hawk.killed = true;
+                const share = 1 / doves.length;
+                doves.forEach(agent => agent.food += share);
+            } else {
+                hawk.food += 1;
+            }
+            return;
+        }
+        if (Random() >= Config.fightDestroy) hawks[randInt(hawks.length)].food += 1;
+        hawks.forEach(a => a.fights++);
+    }
+
+    function planDay(world) {
+        world.agents.forEach(agent => {
+            agent.isHawk = Random() < agent.home;
+            agent.pos = homeSpawn(agent.isHawk);
+            agent.food = 0;
+            agent.fights = 0;
+            agent.killed = false;
+            agent.visitPos = null;
+            agent.bumpedFrom = null;
+            agent.dying = false;
+        });
+        placeFood(world, dailyFoodCount());
+
+        const availible = world.bushes.map((b, i) => ({ x: b.x, z: b.z, idx: i, taken: false }));
+        let round = 0, crowdN = 0;
+        while (round++ < 60) {
+            const hungry = world.agents.filter(agent => agent.food < 2);
+            const free = availible.filter(b => !b.taken);
+            if (!hungry.length || !free.length) break;
+
+            const picks = new Map();
+            let seeking = shuffleFunc(hungry);
+            let open = free.slice();
+            while (seeking.length && open.length) {
+                const turnedAway = [];
+                for (const a of seeking) {
+                    const b = open[randInt(open.length)];
+                    let slot = picks.get(b.idx);
+                    if (!slot) { slot = {b, occ: []}; picks.set(b.idx, slot); }
+                    if (slot.occ.length < FruitCapacity) {
+                        slot.occ.push(a);
+                    } else {
+                        if (!a.visitPos && !a.bumpedFrom) a.bumpedFrom = { x: b.x, z: b.z };
+                        turnedAway.push(a);
+                    }
+                }
+                open = open.filter(b => (picks.get(b.idx)?.occ.length ?? 0) < FruitCapacity);
+                seeking = turnedAway;
+            }
+
+            for (const a of seeking) {
+                if (a.visitPos || !a.bumpedFrom) continue;
+                const k = crowdN++;
+                const angle = k * 2.39996;
+                const rad = 13 + (k % 4) * 4;
+                a.visitPos = { x: a.bumpedFrom.x + Math.cos(angle) * rad, 
+                    z: a.bumpedFrom.z + Math.sin(angle) * rad };
+            }
+            for (const { b, occ } of picks.values()) {
+                b.taken = true;
+                let visited = false;
+                occ.forEach((a, k) => {
+                    if (a.visitPos) return;
+                    const angle = (k / occ.length) * Math.PI * 2 + b.idx * 1.7;
+                    const rad = 7 + occ.length * 1.4;
+                    a.visitPos = { x: b.x + Math.cos(angle) * rad,
+                        z: b.z + Math.sin(angle) * rad };
+                    visited = true;
+                });
+                if (visited) world.bushes[b.idx].foraged = true;
+                resolveBush(occ);
+            }
+        }
+
+        const givers = world.agents.filter(agent => !agent.isHawk && agent.food >= 1);
+        const needy = world.agents.filter(agent => !agent.isHawk && agent.food < 1);
+        let gi = 0;
+        for (const n of needy) {
+            if (gi >= givers.length) break;
+            const g = givers[gi++];
+            g.food -= 0.5;
+            n.food += 0.5;
+        }
+
+        const survivors = [];
+        const births = [];
+        const dying = [];
+
+        for (const a of world.agents) {
+            let lives, canRepro = false;
+            if (a.killed) lives = false;
+            else if (a.food >= 2) {lives = true; canRepro = true; }
+            else if (a.food >= 1) lives = true;
+            else if (a.food > 0 ) lives = Random() >= Config.shareRisk;
+            else lives = false;
+
+            if (lives && a.fights > 0) {
+                const condition = clamp(a.food / 2, 0, 1);
+                const risk = clamp(Config.injury * (1 + Config.hungerCost * (1 - condition)), 0, 1);
+                if (Random() < 1 - Math.pow(1 - risk, a.fights)) { lives = false; canRepro = false; }
+            }
+            if (lives) {survivors.push(a); a._repro = canRepro; }
+            else { a.dying = true; dying.push(a); }
+        }
+
+        for (const a of survivors) {
+            if (a._repro && survivors.length + births.length < Config.maxPopulation) {
+                births.push(makeAgent(world, a.home));
+            }
+        }
+        return { survivors, births, dying, births_n: births.length, deaths_n: dying.length };
+    }
+
+    function commitDay(world) {
+        world.day++;
+        world.lastbirths = world.plan.births_n;
+        world.lastdeaths = world.plan.deaths_n;
+        world.plan.survivors.forEach(agent => {agent.dying = false; });
+        world.agents = world.plan.survivors.concat(world.plan.births);
+        world.plan = planDay(world);
+        world.history.push(snapshot(world));
+        if (world.history.length > 4000) world.history.shift();
+    }
+
+    const stepAll = () => { for (const w of worlds) commitDay(w); };
+    const resetAll = () => { for (const w of worlds) initSim(w); };
+
+    function agentPos(agent, phase) {
+        const home = agent.pos;
+        const tgt = agent.visitPos || agent.pos;
+        const via = agent.bumpedFrom;
+        const face = (fx, fz, tx, tz) => Math.atan2(tx - fx, tz - fz);
+        let x, z, moving = true;
+        let heading = agent.heading;
+
+        const arrive = via ? .46 : .42, leave = .55;
+
+        if (phase < arrive) {
+            if (!via) {
+                const p = ease(phase / arrive);
+                x = lerp(home.x, tgt.x, p);
+                z = lerp(home.z, tgt.z, p);
+                heading = face(home.x, home.z, tgt.x, tgt.z);
+            } else if (phase < .24) {
+                const p = ease(phase / .24);
+                x = lerp(home.x, via.x, p);
+                z = lerp(home.z, via.z, p);
+                heading = face(home.x, home.z, via.x, via.z);
+            } else if (phase < .3) {
+                x = via.x;
+                z = via.z;
+                moving = false;
+            } else {
+                const p = ease((phase - 0.3) / (arrive - 0.3));
+                x = lerp(via.x, tgt.x, p);
+                z = lerp(via.z, tgt.z, p);
+                heading = face(via.x, via.z, tgt.x, tgt.z);
+            }
+        } else if (phase < leave || agent.dying) {
+            x = tgt.x;
+            z = tgt.z;
+            moving = false;
+        } else {
+            const p = ease((phase - leave) / (1 - leave));
+            x = lerp(tgt.x, home.x, p);
+            z = lerp(tgt.z, home.z, p);
+            heading = face(tgt.x, tgt.z, home.x, home.z);
+        }
+        agent.heading = heading;
+        return {x, z, moving, heading};
+    }
+    
+    const canvas = ElementID("scene");
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true});
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.NeutralToneMapping ?? THREE.NoToneMapping;
+    renderer.toneMappingExposure = 1.06;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 60);
+    camera.position.set(1.29, 1.99, 3.22);
+
+    const controls = new OrbitControls(camera, canvas);
+    controls.target.set(0, -0.02, 0);
+    controls.enableDamping = true;
+    controls.dampingFactor =0.06;
+    controls.minDistance = 1.7;
+    controls.maxDistance = 6.5;
+    controls.rotateSpeed = 0.55;
+
+    controls.minPolarAngle = 0.12;
+    controls.maxPolarAngle = 1.95;
+
+    controls.enablePan = true;
+    controls.screenSpacePanning = true;
+    controls.panSpeed = 0.85;
+    controls.mouseButtons = {
+        LEFT: THREE.MOUSE.ROTATE,
+        MIDDLE: THREE.MOUSE.DOLLY,
+        RIGHT: THREE.MOUSE.PAN
+    };
+    canvas.addEventListener("contextmenu", e => e.preventDefault());
+
+    function clampView() {
+        const t= controls.target;
+        const d= Math.hypot(t.x, t.z);
+
+        if (d > viewSpan) { t.x *= viewSpan / d; t.z *= viewSpan / d; }
+        t.y = clamp(t.y, -0.35, 0.45)
+    }
+
+    function frameWorlds() {
+        const cols = Math.min(worlds.length, 2), rows = Math.ceil(worlds.length / cols);
+        viewSpan = Math.max((cols - 1) * islandGap / 2, (rows - 1) * islandGap / 2) + 1.15;
+        const dist = clamp(viewSpan * 3.4, 2.6, 16);
+        const dir = camera.position.clone().sub(controls.target).normalize();
+        controls.target.set(0, -0.02, 0);
+        camera.position.copy(controls.target).addScaledVector(dir, dist);
+        controls.maxDistance = dist * 2.4;
+        controls.update();
+    }
+
+    function recenter() {
+        frameWorlds()
+    };
+    canvas.addEventListener("dblclick", recenter);
+
+    const key = new THREE.DirectionalLight("#fff2dc", 1.9);
+    key.position.set(2.1, 3.5, 1.7);
+
+    scene.add(key, key.target);
+
+    scene.add(new THREE.HemisphereLight("#a9cbe8", "#4a6f3e", 1.45));
+    const rim = new THREE.DirectionalLight("#9fc0e0", 0.45);
+    rim.position.set(-2.4, 1.1, -2);
+    scene.add(rim);
+
+    const pool = {};
+    const _m4 = new THREE.Matrix4();
+    const _q = new THREE.Quaternion();
+    const _e = new THREE.Euler();
+    const _p = new THREE.Vector3();
+    const _s = new THREE.Vector3();
+    const _camRight = new THREE.Vector3();
+
+    const maxCardPitch = Math.PI / 4;
+    const shadowYaw = Math.atan2(key.position.z, -key.position.x);
+    const shadowLen = Math.hypot(key.position.x, key.position.z) / key.position.y;
+    const shadowDX = -key.position.x / Math.hypot(key.position.x, key.position.z);
+    const shadowDZ = -key.position.z / Math.hypot(key.position.x, key.position.z);
+    const agentHeight = cardHeight.blue;
+    const bushOpacity = 0.75;
+    const propShadowN = SCENERY_N + ROCK_N + 2;
+
+    let camYaw = 0
+    let camPitch = 0;
+
+    let originX = 0
+    let originZ = 0;
+    let viewSpan = 1.15;
+    let propShadowCount = 0;
+
+    function decalY(lx, lz, half) {
+        const r = Math.hypot(lx, lz);
+        const here = groundY(r);
+        return here + (here - groundY(r + half)) * 0.6 + 0.0016;
+    }
+
+    function addPropShadow(lx, lz, w) {
+        const probShad = pool.probShadow;
+        if (!probShad || propShadowCount >= probShad.count) return;
+        const off = w * 0.42 * shadowLen;
+        const sx = lx + shadowDX * off;
+        const sz = lz + shadowDZ * off;
+        placeFlat(probShad, propShadowCount++, originX + sx, decalY(sx, sz, w * 0.71), originZ + sz, shadowYaw, w * 1.42, w * 0.95);
+    }
+
+    function putProp(k, mesh, i, lx, lz, s) {
+        const y = plantY(Math.hypot(lx, lz), (propFoot[k] || 0) * s);
+        const h = cardHeight[k] * s;
+        placeCard(mesh, i, originX + lx, y - h * 0.02, originZ + lz, camYaw, h, h, 0);
+        addPropShadow(lx, lz, h * 0.82);
+    }
+
+    const HIDDEN = new THREE.Matrix4().makeScale(0, 0, 0);
+
+    function instanced(id, num) {
+        const IMesh = new THREE.InstancedMesh(bufferGeometry[id], material[id], num);
+        IMesh.frustumCulled = false;
+        IMesh.count = num;
+        for (let i = 0; i < num; i++) IMesh.setMatrixAt(i, HIDDEN);
+        scene.add(IMesh);
+        pool[id] = IMesh;
+        return IMesh;
+    }
+
+    function placeCard(mesh, i, x, y, z, _yaw, sx, sy, roll = 0) {
+        _e.set(-camPitch, camYaw, roll, "YXZ");
+        _q.setFromEuler(_e);
+        _p.set(x, y, z);
+        _s.set(sx, sy, 1);
+        _m4.compose(_p, _q, _s);
+        mesh.setMatrixAt(i, _m4);
+    }
+
+    function placeFlat(mesh, i, x, y, z, ry, sx, sz) {
+        _e.set(0, ry, 0, "YXZ")
+        _q.setFromEuler(_e);
+        _p.set(x, y, z);
+        _s.set(sx, 1, sz);
+        _m4.compose(_p, _q, _s);
+        mesh.setMatrixAt(i, _m4);
+    }
+
+    const homeMeshes = [];
+    const islandMeshes = [];
+    let selectRing = null;
+
+    function ringGeometry(r0, r1, seg = 72) {
+        const points = [];
+        for (let i = 0; i <= 10; i++) {
+            const r = r0 + (r1 - r0) * (i / 10);
+            points.push(new THREE.Vector2(r, groundY(r) + 0.0035));
+        }
+        return new THREE.LatheGeometry(points, seg);
+    }
+
+    function buildScene() {
+        if (material.bush) {
+            material.bush.transparent = true;
+            material.bush.opacity = bushOpacity;
+            material.bush.depthWrite = false;
+        }
+
+        for (let k = 0; k < maxIslands; k++) {
+            const island = new THREE.Mesh(bufferGeometry.island, material.island);
+            scene.add(island);
+            islandMeshes.push(island);
+
+            for (const sp of ["blue", "red"]) {
+                const hk = sp === "blue" ? "blueHome" : "redHome";
+                const home = new THREE.Mesh(bufferGeometry[hk], material[hk]);
+                home.scale.setScalar(cardHeight[hk]);
+                home.renderOrder = 1;
+                scene.add(home);
+                homeMeshes.push({ mesh: home, sp, hk, k, lx: Simulation[sp].x * W, lz: Simulation[sp].z * W });
+            }
+        }
+
+        selectRing = new THREE.Mesh(ringGeometry(0.9, 0.985), new THREE.MeshBasicMaterial({
+            color: 0xd9a441,
+            transparent: true,
+            opacity: 0.5,
+            depthWrite: false,
+            side: THREE.DoubleSide,
+        }));
+        selectRing.renderOrder = 0;
+        scene.add(selectRing);
+
+        const numIsland = maxIslands;
+        instanced("bush", SCENERY_N * numIsland).renderOrder = 2;
+        instanced("rock", ROCK_N * numIsland).renderOrder = 1;
+        instanced("fruit", 80 * numIsland).renderOrder = 3;
+
+        for (const sp of ["blue", "red"]) instanced(sp, instancePoolCap * numIsland).renderOrder = 1;
+        instanced("shadow", instancePoolCap * numIsland).renderOrder = 0;
+        instanced("probShadow", propShadowN * numIsland).renderOrder = 0;
+
+        applyLayout();
+    }
+
+    function applyLayout() {
+        for (let k = 0; k < maxIslands; k++) {
+            const worldNum = worlds[k];
+            islandMeshes[k].visible = !!worldNum;
+            if (worldNum) islandMeshes[k].position.set(worldNum.origin.x, 0, worldNum.origin.z);
+        }
+        for (const hm of homeMeshes) {
+            const worldNum = worlds[hm.k];
+            hm.mesh.visible = !!worldNum;
+            if (!worldNum) continue;
+            const hy = plantY(Math.hypot(hm.lx, hm.lz), propFoot[hm.hk] ?? 0.082);
+            hm.mesh.position.set(worldNum.origin.x + hm.lx, hy - cardHeight[hm.hk] * 0.02, worldNum.origin.z + hm.lz);
+
+        }
+        syncSelectRing();
+    }
+
+    function syncSelectRing() {
+        if (!selectRing) return;
+        const worldNum = worlds[selected];
+        selectRing.visible = !!worldNum && worlds.length > 1;
+        if (worldNum) selectRing.position.set(worldNum.origin.x, 0, worldNum.origin.z);
+    }
+
+    function syncScenery() {
+        const bPool = pool.bush
+        const rPool = pool.rock;
+        if (!bPool) return;
+        let bi = 0;
+        let ri = 0;
+        for (const w of worlds) {
+            originX = w.origin.x; 
+            originZ = w.origin.z;
+            for (const p of w.scenery) if (bi < bPool.count) putProp("bush", bPool, bi++, p.x * W, p.z * W, p.s);
+            for (const p of w.rocks) if (ri < rPool.count) putProp("rock", rPool, ri++, p.x * W, p.z * W, p.s);
+        }
+        for (let i = bi; i < bPool.count; i++) bPool.setMatrixAt(i, HIDDEN);
+        for (let i = ri; i < rPool.count; i++) rPool.setMatrixAt(i, HIDDEN);
+        bPool.instanceMatrix.needsUpdate = true;
+        rPool.instanceMatrix.needsUpdate = true;
+    }
+
+    function updateScene(now, phase) {
+        const time = now / 1000;
+
+        camYaw = Math.atan2(camera.position.x - controls.target.x, camera.position.z - controls.target.z);
+        _camRight.set(Math.cos(camYaw), 0, -Math.sin(camYaw));
+        camPitch = clamp(Math.atan2(camera.position.y - controls.target.y, Math.hypot(camera.position.x - controls.target.x, camera.position.z - controls.target.z)), -maxCardPitch, maxCardPitch);
+        propShadowCount = 0;
+
+        syncScenery();
+
+        for (const hMesh of homeMeshes) {
+            const worldNum = worlds[hMesh.k];
+            if (!worldNum) continue;
+            originX = worldNum.origin.x; 
+            originZ = worldNum.origin.z;
+            hMesh.mesh.rotation.set(-camPitch, camYaw, 0, "YXZ");
+            addPropShadow(hMesh.lx, hMesh.lz, cardHeight[hMesh.hk] * 0.62);
+        }
+
+        const fPool = pool.fruit;
+        const shadows = pool.shadow;
+        let fi = 0;
+        let si = 0;
+        const cNum = { blue: 0, red: 0 };
+
+        for (const w of worlds) {
+            originX = w.origin.x; 
+            originZ = w.origin.z;
+
+            for (const wBush of w.bushes) {
+                if (fi >= fPool.count) break;
+                let a = 1;
+                if (wBush.foraged) a = 1 - clamp((phase - 0.42) / 0.16, 0, 1);
+                if (a > 0.01) {
+                    const bx = wBush.x * W;
+                    const bz = wBush.z * W;
+                    const base = plantY(Math.hypot(bx, bz), propFoot.bush * (w.scenery[wBush.idx]?.s ?? 1));
+                    const height = cardHeight.fruit * a;
+                    const near = 0.006;
+
+                    placeCard(fPool, fi, originX + bx + Math.sin(camYaw) * near, base + wBush.oy - height * 0.5, originZ + bz + Math.cos(camYaw) * near, camYaw, height, height, 0);
+                } else fPool.setMatrixAt(fi, HIDDEN);
+                fi++;
+            }
+
+            for (const a of w.agents) {
+                const role = a.isHawk ? "red" : "blue";
+                const mesh = pool[role];
+                const i = cNum[role]++;
+                if (i >= mesh.count) continue;
+
+                const p = agentPos(a, phase);
+                const x = p.x * W;
+                const z = p.z * W;
+                const gy = groundY(Math.hypot(x, z));
+
+                let s = 1;
+                let tilt = 0;
+                let y = gy;
+                let hop = 0;
+
+                if (a.dying) {
+                    const d = clamp((phase - 0.55) / 0.14, 0, 1);
+                    tilt = d * Math.PI * 0.5 * (a.id % 2 ? 1 : -1);
+                    y = gy - d * agentHeight * 0.1;
+                    s = clamp(phase / 0.08, 0, 1) * (1 - clamp((phase - 0.72) / 0.22, 0, 1));
+                } else {
+                    s = (phase < 0.015 || phase > 0.975) ? 0 : 1;
+                    if (p.moving) {
+                        hop = Math.abs(Math.sin(time * 5.2 * a.wob + a.phase));
+                        y = gy + hop * agentHeight * 0.17;
+                        tilt = Math.sin(time * 5.2 * a.wob + a.phase) * 0.13;
+                    } else {
+                        y = gy + (Math.sin(time * 2.1 * a.wob + a.phase) * 0.5 + 0.5) * agentHeight * 0.05;
+                    }
+                }
+
+                const side = Math.sin(p.heading) * _camRight.x + Math.cos(p.heading) * _camRight.z;
+                if (Math.abs(side) > 0.18) a.flip = side < 0 ? -1 : 1;
+                
+                const roll = a.dying ? tilt: tilt - side * 0.13;
+                const sy = agentHeight * s * (1 + hop * 0.11);
+                const sx = agentHeight * s * (1 - hop * 0.09) * (a.flip || 1);
+
+                const bias = (a.id % 23) * 0.00035;
+                placeCard(mesh, i, originX + x + Math.sin(camYaw) * bias, y - agentHeight * 0.008, originZ + z + Math.cos(camYaw) * bias, camYaw, sx, sy, roll);
+
+                if (shadows && si < shadows.count) {
+                    const soft = clamp(1 - hop * 0.45, 0, 1) * s;
+                    if (soft > 0.02) {
+                        const off = ((y - gy) + agentHeight * 0.4) * shadowLen;
+                        const wd = agentHeight * 0.95 * soft;
+                        const sx = x + shadowDX * off;
+                        const sz = z + shadowDZ * off;
+                        placeFlat(shadows, si, originX + sx, decalY(sx, sz, wd * 0.75), originZ + sz, shadowYaw, wd * 1.5, wd);
+                    } else {
+                        shadows.setMatrixAt(si, HIDDEN);
+                    }
+                    si++;
+                }
+            }
+        }
+
+        for (let i = fi; i < fPool.count; i++) fPool.setMatrixAt(i, HIDDEN);
+        fPool.instanceMatrix.needsUpdate = true;
+        for (const sp of ["blue", "red"]) {
+            const mesh = pool[sp];
+            for (let i = cNum[sp]; i < mesh.count; i++) mesh.setMatrixAt(i, HIDDEN);
+            mesh.instanceMatrix.needsUpdate = true;
+        }
+        if (shadows) {
+            for (let i = si; i < shadows.count; i++) shadows.setMatrixAt(i, HIDDEN);
+            shadows.instanceMatrix.needsUpdate = true;
+        }
+        const pShadow = pool.probShadow;
+        if (pShadow) {
+            for (let i = propShadowCount; i < pShadow.count; i++) pShadow.setMatrixAt(i, HIDDEN);
+            pShadow.instanceMatrix.needsUpdate = true;
+        }
+    }
+
+    function fitConsole() {
+        const c = ElementID("console"), r = ElementID("readout");
+        if (!c || !r) return;
+        const avail = innerHeight - 22 - 16 - r.offsetHeight - 22;
+        c.style.maxHeight = Math.max(140, avail) + "px";
+    }
+
+    function resize() {
+        const width = innerWidth;
+        const height = innerHeight;
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        drawChart();
+        fitConsole();
+    }
+    addEventListener("resize", resize);
+
+    const chart = ElementID("chart");
+    const cX = chart.getContext("2d");
+
+    function niceStep(range, target) {
+        const raw = range / target;
+        const pow = Math.pow(10, Math.floor(Math.log10(raw)));
+        const nn = raw / pow;
+        return Math.max(1, (nn < 1.5 ? 1: nn < 3 ? 2 : nn < 7 ? 5 : 10) * pow);
+    }
+
+    function axis(x1, y1, x2, y2) {
+        const a = Math.atan2(y2 - y1, x2 - x1);
+        const h = 5.5;
+        cX.beginPath();
+        cX.moveTo(x1, y1);
+        cX.lineTo(x2, y2);
+        cX.stroke();
+        cX.beginPath();
+        cX.moveTo(x2, y2);
+        cX.lineTo(x2 - h * Math.cos(a - 0.42), y2 - h * Math.sin(a - 0.42));
+        cX.lineTo(x2 - h * Math.cos(a + 0.42), y2 - h * Math.sin(a + 0.42));
+        cX.closePath();
+        cX.fill();
+    }
+
+    function drawChart() {
+        const dpr = Math.min(devicePixelRatio || 1, 2);
+        const clientWidth = chart.clientWidth || 320;
+        const clientHeight = chart.clientHeight || 178;
+        chart.width = clientWidth * dpr;
+        chart.height = clientHeight * dpr;
+        cX.setTransform(dpr, 0, 0, dpr, 0, 0);
+        cX.clearRect(0, 0, clientWidth, clientHeight);
+        const history = worlds[selected]?.history ?? [];
+        if(!history.length) return;
+
+        const L = 40;
+        const R = 46;
+        const T = 16;
+        const B = 34;
+        const x0 = L;
+        const x1 = clientWidth - R;
+        const y0 = clientHeight - B;
+        const y1 = T;
+        const maxX = Math.max(6, history.length - 1);
+        const X = i => x0 + (i / maxX) * (x1 - x0);
+        
+        const maxYVal = Math.max(4, ...history.map(h => Math.max(h.doves, h.hawks)));
+        const yStep = niceStep(maxYVal, 4);
+        const maxY = Math.ceil(maxYVal / yStep) * yStep;
+        const Y = v => y0 - (v / maxY) * (y0 - y1);
+
+        const serif = px => `${px}px "EB Garamond", Georgia, serif`;
+
+        cX.save();
+        cX.beginPath();
+        cX.rect(x0, y1, x1- x0, y0 - y1);
+        cX.clip();
+
+        const band = (key, line, fill) => {
+            cX.fillStyle = fill;
+            cX.beginPath();
+            cX.moveTo(X(0), y0);
+            history.forEach((h, i) => cX.lineTo(X(i), Y(h[key])));
+            cX.lineTo(X(history.length - 1), y0);
+            cX.closePath();
+            cX.fill();
+            cX.strokeStyle = line;
+            cX.lineWidth = 1.8;
+            cX.lineJoin = "round";
+            cX.beginPath();
+            history.forEach((h, i) => i ? cX.lineTo(X(i), Y(h[key])) : cX.moveTo(X(i), Y(h[key])));
+            cX.stroke();
+        };
+        band("hawks", "#d95a4a", "rgba(217, 90, 74, 0.34)");
+        band("doves", "#5a93d6", "rgba(90, 147, 214, 0.34)");
+
+        const G = v => y0 - v * (y0 - y1);
+        cX.strokeStyle = "#d9a441";
+        cX.lineWidth = 2;
+        cX.lineJoin = "round";
+        cX.beginPath();
+        history.forEach((h, i) => i ? cX.lineTo(X(i), G(h.gene)) : cX.moveTo(X(i), G(h.gene)));
+        cX.stroke();
+        cX.setLineDash([2, 4]);
+        cX.strokeStyle = "rgba(217, 164, 65, 0.35)";
+        cX.lineWidth = 1;
+        cX.beginPath();
+        cX.moveTo(x0, G(0.5));
+        cX.lineTo(x1, G(0.5));
+        cX.stroke();
+        cX.setLineDash([]);
+        cX.restore();
+
+        cX.strokeStyle = "rgba(236, 231, 220, 0.62)";
+        cX.fillStyle = "rgba(236, 231, 220, 0.62)";
+        cX.lineWidth = 1.1;
+        axis(x0, y0 + 9, x0, y1 - 9);
+        axis(x0 - 9, y0, x1 + 9, y0);
+
+        cX.font = serif(12.5);
+        cX.fillStyle = "rgba(236, 231, 220, 0.78)";
+        cX.textAlign = "right";
+        cX.textBaseline = "middle";
+
+        for (let v = yStep; v <= maxY + 1e-9; v += yStep) {
+            const y = Y(v);
+            cX.beginPath();
+            cX.moveTo(x0 - 3.5, y);
+            cX.lineTo(x0 + 3.5, y);
+            cX.stroke();
+            cX.fillText(String(Math.round(v)), x0 - 9, y);
+        }
+
+        cX.strokeStyle = "rgba(217, 164, 65, 0.7)";
+        cX.fillStyle = "rgba(217, 164, 65, 0.95)";
+        cX.textAlign = "left";
+         
+        for (const v of [0, 0.5, 1]) {
+            const y = G(v);
+            cX.beginPath();
+            cX.moveTo(x1 - 3.5, y);
+            cX.lineTo(x1 + 3.5, y);
+            cX.stroke();
+            cX.fillText(v.toFixed(1), x1 + 7, y);
+        }
+
+        cX.strokeStyle = "rgba(236, 231, 220, 0.62)"
+        cX.fillStyle = "rgba(236, 231, 220, 0.78)"
+        cX.textAlign = "center";
+
+        const xStep = niceStep(maxX, 5);
+        cX.textAlign = "center";
+        cX.textBaseline = "top";
+
+        for (let d = xStep; d <= maxX + 1e-9; d+= xStep) {
+            const x = X(d);
+            cX.beginPath();
+            cX.moveTo(x, y0 - 3.5);
+            cX.lineTo(x, y0 + 3.5);
+            cX.stroke();
+            cX.fillText(String(Math.round(d)), x, y0 + 8);
+        }
+
+        cX.fillStyle = "rgba(236, 231, 220, 0.92)";
+        cX.font = serif(13.5);
+        cX.textAlign = "center";
+        cX.textBaseline = "alphabetic";
+        cX.fillText("Day", (x0 + x1) / 2, clientHeight - 4);
+        cX.textAlign = "center";
+        cX.font = serif(12.5);
+
+        cX.save();
+        cX.translate(11, (y0 + y1) / 2);
+        cX.rotate(-Math.PI / 2);
+        cX.textBaseline = "middle";
+        cX.fillStyle = "rgba(236, 231, 220, 0.82)";
+        cX.fillText("Population", 0, 0);
+        cX.restore();
+
+        cX.save();
+        cX.translate(clientWidth - 9, (y0 + y1) / 2);
+        cX.rotate(-Math.PI / 2);
+        cX.textBaseline = "middle";
+        cX.fillStyle = "rgba(217, 164, 65, 0.95)";
+        cX.fillText("Aggression gene", 0, 0);
+        cX.restore();
+    }
+
+    document.fonts?.ready.then(drawChart);
+
+    function updateHUD() {
+        const selectedWorld = worlds[selected];
+        if (!selectedWorld) return;
+        ElementID("meanAggressionVal").textContent = geneIn(selectedWorld).toFixed(3);
+        ElementID("perPersonVal").textContent = selectedWorld.agents.length ? (Config.foodCount / selectedWorld.agents.length).toFixed(3) : "N/A";
+        ElementID("dayVal").textContent = selectedWorld.day ?? "N/A";
+        ElementID("SharedStat").textContent = dovesIn(selectedWorld);
+        ElementID("foughtStat").textContent = hawksIn(selectedWorld);
+        ElementID("bornVal").textContent = selectedWorld.lastbirths;
+        ElementID("diedVal").textContent = selectedWorld.lastdeaths;
+    }
+
+    function buildIsleTabs() {
+        const container = ElementID("isles");
+        container.textContent = "";
+        container.hidden = worlds.length < 2;
+        if (container.hidden) return;
+
+        const label = document.createElement("span");
+        label.className = "isle-tab-label";
+        label.textContent = "Island";
+        container.appendChild(label);
+        worlds.forEach((_, i) => {
+            const button = document.createElement("button");
+            button.textContent = String(i + 1);
+            button.setAttribute("aria-pressed", String(i === selected));
+            button.title = `Show island ${i + 1} on the graph`;
+            button.onclick = () => {
+                selected = i;
+                buildIsleTabs();
+                syncSelectRing();
+                updateHUD();
+                drawChart();
+            };
+            container.appendChild(button);
+        });
+    }
+
+    function setIslands(num) {
+        layoutWorlds(num);
+        resetAll();
+        applyLayout();
+        buildIsleTabs();
+        frameWorlds();
+        dayTimer = 0;
+        clock = 0;
+        updateHUD();
+        drawChart();
+        fitConsole();
+    }
+
+    function sliderFill(s) {
+        const min = +s.min
+        const max = +s.max;
+        const pct = ((+s.value - min) / (max - min)) * 100;
+        s.style.background = `linear-gradient(90deg, var(--Brass) ${pct}%, #3a4148 ${pct}%)`;
+    }
+
+    const labels = { islands: "islandsVal", maxPopulation: "capVal", populationStart: "popVal", aggressionStart: "aggVal", foodCount: "foodVal", mutation: "mutationVal", hungerCost: "hungerCostVal", speed: "speedVal", shareRisk: "shareRiskVal", fightDestroy: "fightDestroyVal", injury: "injuryVal", aggressiveBackfire: "aggressiveBackfireVal" };
+    
+    function bindSlider(id, fmt, live) {
+        const s = ElementID(id);
+        const o = ElementID(labels[id]);
+        s.value = Config[id];
+        const show = () => {o.textContent = fmt(Config[id]); sliderFill(s); };
+        show();
+        s.oninput = () => {Config[id] = parseFloat(s.value); show(); if (live) live(); };
+    }
+
+    const pct = v => Math.round(v * 100) + "%";
+    bindSlider("islands", v => v, () => setIslands(Config.islands));
+    bindSlider("populationStart", v => v, () => softReset());
+    bindSlider("aggressionStart", v => v.toFixed(2), () => softReset());
+    bindSlider("mutation", v => v.toFixed(3));
+    bindSlider("hungerCost", v => v.toFixed(1) + "\u00d7");
+    bindSlider("foodCount", v => v, () => { for (const w of worlds) w.plan = planDay(w); });
+    bindSlider("maxPopulation", v => v);
+    bindSlider("speed", v => v + "x");
+    bindSlider("injury", pct);
+    bindSlider("aggressiveBackfire", pct);
+    bindSlider("shareRisk", pct);
+    bindSlider("fightDestroy", pct);
+
+    function softReset() {
+        dayTimer = 0;
+        clock = 0;
+        resetAll();
+        updateHUD();
+        drawChart();
+    }
+
+    let running = false;
+    ElementID("playButton").onclick = () => {
+        running = !running;
+        ElementID("playButton").textContent = running ? "Pause" : "Play";
+    };
+    ElementID("stepButton").onclick = () => {stepAll(); dayTimer = 0; updateHUD(); drawChart(); };
+    ElementID("resetButton").onclick = () => {running = false; ElementID("playButton").textContent = "Play"; softReset(); };
+
+    addEventListener("keydown", (e) => {
+        if (e.target.matches('input, button, summary')) return;
+        if (e.code === 'Space') { e.preventDefault(); ElementID('playButton').click(); }
+        if (e.key === '.')      ElementID('stepButton').click();
+        if (e.key.toLowerCase() === 'r') ElementID('resetButton').click();
+        if (e.key.toLowerCase() === 'f') recenter();
+    });
+
+    let dayTimer = 0;
+    let lastT = 0;
+    let clock = 0;
+
+    function frame(now) {
+        requestAnimationFrame(frame);
+        const dt = lastT ? now - lastT : 0;
+        lastT = now;
+
+        if (running) {
+            clock += dt;
+            dayTimer += dt * Config.speed;
+            if (dayTimer >= msPerDay) {stepAll(); dayTimer = 0; updateHUD(); drawChart(); }
+        }
+
+        const phase = clamp(dayTimer / msPerDay, 0, 1);
+
+        clampView();
+        controls.update();
+        updateScene(clock, phase);
+        renderer.render(scene, camera);
+    }
+
+    buildAssets().then(() => {
+        layoutWorlds(Config.islands);
+        buildScene();
+        resize();
+        resetAll();
+        frameWorlds();
+        buildIsleTabs();
+        updateHUD();
+        drawChart();
+        fitConsole();
+        requestAnimationFrame(frame);
+        document.fonts?.ready.then(drawChart);
+        ElementID("boot").classList.add("gone");
+        setTimeout(() => ElementID("boot").remove(), 600);
+    }).catch(err => {
+        console.error(err);
+        ElementID("boot").textContent = "Error: " + err;
+    });
+</script>
+</html>
